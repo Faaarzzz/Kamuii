@@ -37,6 +37,14 @@
 
 ---
 
+----------
+## FOR REPLIT USER
+[![Run on Repl.it](https://repl.it/badge/github/Faaarzzz/Kamuii)](https://repl.it/github/Faaarzzz/Kamuii)
+------
+<p align="center">
+  <a href="https://youtu.be/jom_scHK09c"><img src="https://telegra.ph/file/873e2bbfbd1f15a535995.jpg" />
+</p>
+<br>
 
 
 # Requirements
