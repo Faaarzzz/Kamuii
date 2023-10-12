@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "npm i -g pm2 && pm2 start index.js && pm2 save && pm2 logs"
+    "start": "pm2 start . --attach --Asuna xfarz"
   },
   "keywords": [
     "termux",
@@ -21,6 +21,7 @@
   "author": "Farz.",
   "license": "MIT",
   "dependencies": {
+    "@adiwajshing/baileys": "npm:baileys@^6.0.9",
     "@adiwajshing/keyed-db": "^0.2.4",
     "awesome-phonenumber": "^2.64.0",
     "axios": "^0.24.0",
