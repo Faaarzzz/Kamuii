@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "pm2 start . --attach --Asuna xfarz"
+    "start": "npm i @adiwajshing/baileys && node index.js"
   },
   "keywords": [
     "termux",
