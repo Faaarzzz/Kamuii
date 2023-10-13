@@ -1,24 +1,38 @@
-/**
-   * Create By Dika Ardnt.
-   * Contact Me on wa.me/6288292024190
-   * Follow https://github.com/DikaArdnt
-*/
-
 require('./config')
-const { default: hisokaConnect, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
+const {
+    default: WADefault,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    generateForwardMessageContent,
+    prepareWAMessageMedia,
+    generateWAMessageFromContent,
+    generateMessageID,
+    downloadContentFromMessage,
+    makeInMemoryStore,
+    jidDecode,
+    proto,
+    makeCacheableSignalKeyStore, PHONENUMBER_MCC
+} = require("@adiwajshing/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
+const NodeCache = require("node-cache")
 const yargs = require('yargs/yargs')
 const chalk = require('chalk')
 const FileType = require('file-type')
 const path = require('path')
 const _ = require('lodash')
 const axios = require('axios')
+const readline = require("readline")
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
 const moment = require('moment-timezone')
+const pairingCode = true
+const useMobile = false
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+const question = (text) => new Promise((resolve) => rl.question(text, resolve))
 
 var low
 try {
@@ -68,41 +82,38 @@ if (global.db) setInterval(async () => {
     if (global.db.data) await global.db.write()
 }, 30 * 1000)
 
-    async function startHisoka() {
-     const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}`)
+    
+async function startHisoka() {
+    const {
+        state,
+        saveCreds
+    } = await useMultiFileAuthState(`./${sessionName}`)
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const msgRetryCounterCache = new NodeCache()
+    const hisoka = WADefault({
+        version,
+        logger: pino({ level: "fatal" }).child({ level: "fatal" }),
+        printQRInTerminal: !pairingCode,
+        mobile: useMobile, 
+        browser: ['Chrome (Linux)', '', ''],
+        auth: {
+         creds: state.creds,
+         keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+      },
+	    generateHighQualityLinkPreview: true, // make high preview link
+      getMessage: async (key) => {
+         let jid = jidNormalizedUser(key.remoteJid)
+         let msg = await store.loadMessage(jid, key.id)
 
-     const hisoka = hisokaConnect({
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: true,
-        browser: ['hisoka Multi Device','Safari','1.0.0'],
-        patchMessageBeforeSending: (message) => {
-
-            const requiresPatch = !!(
-              message.buttonsMessage
-              || message.templateMessage
-              || message.listMessage
-              );
-            if (requiresPatch) {
-                message = {
-                    viewOnceMessage: {
-                        message: {
-                            messageContextInfo: {
-                                deviceListMetadataVersion: 2,
-                                deviceListMetadata: {},
-                            },
-                            ...message,
-                        },
-                    },
-                };
-            }
-            return message;
-        },
-        auth: state
+         return msg?.message || ""
+      },
+      msgRetryCounterCache, // Resolve waiting messages
+      defaultQueryTimeoutMs: undefined,
 
     })
-
-     store.bind(hisoka.ev)
-
+    
+    store.bind(hisoka.ev)
+    
     // anticall auto block
      hisoka.ws.on('CB:call', async (json) => {
         const callerId = json.content[0].attrs['call-creator']
@@ -129,7 +140,40 @@ if (global.db) setInterval(async () => {
                     console.log(err)
                 }
             })
+            
+if (pairingCode && !hisoka.authState.creds.registered) {
+      if (useMobile) throw new Error('Cannot use pairing code with mobile api')
 
+      let phoneNumber
+      if (!!pairingNumber) {
+         phoneNumber = pairingNumber.replace(/[^0-9]/g, '')
+
+         if (!Object.keys(PHONENUMBER_MCC).some(v => phoneNumber.startsWith(v))) {
+            console.log("Start with your country's WhatsApp code, Example : 62xxx")
+            process.exit(0)
+         }
+      } else {
+         phoneNumber = await question(`Please type your WhatsApp number : `)
+         phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
+
+         // Ask again when entering the wrong number
+         if (!Object.keys(PHONENUMBER_MCC).some(v => phoneNumber.startsWith(v))) {
+            console.log("Start with your country's WhatsApp code, Example : 62xxx")
+
+            phoneNumber = await question(`Please type your WhatsApp number : `)
+            phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
+            rl.close()
+         }
+      }
+
+      setTimeout(async () => {
+         let code = await hisoka.requestPairingCode(phoneNumber)
+         code = code?.match(/.{1,4}/g)?.join("-") || code
+         console.log(`Your Pairing Code : `, code)
+      }, 3000)
+    }
+    
+    
     // Group Update
      hisoka.ev.on('groups.update', async pea => {
        //console.log(pea)
