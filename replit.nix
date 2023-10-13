@@ -7,9 +7,9 @@
 	      pkgs.nodePackages.typescript
         pkgs.libuuid
         pkgs.ffmpeg
+        pkgs.git
         pkgs.imagemagick  
         pkgs.wget
-        pkgs.git
         pkgs.yarn
         pkgs.nodePackages.pm2
     ];
