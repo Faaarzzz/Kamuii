@@ -10,6 +10,7 @@
         pkgs.imagemagick  
         pkgs.wget
         pkgs.git
+        pkgs.yarn
         pkgs.nodePackages.pm2
     ];
   env ={
