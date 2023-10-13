@@ -17,6 +17,7 @@ global.premium = ['6285692949920']
 global.packname = 'Λsuna Bot'
 global.author = '@faaaarr__'
 global.sessionName = 'farz'
+global.pairingNumber = "" //pairing number to install bot 		
 global.prefa = ['','!','.','🐦','🐤','🗿']
 global.sp = '⭔'
 global.mess = {
